@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Varukorgen</title>
+  <style>
+    /* ===== Tema / grund ===== */
+    :root{
+      --bg:#fff8f8; --bg2:#fffdfd;
+      --text:#262626; --text-soft:#474747; --text-invert:#ffffff;
+      --accent:#e30613; --muted:#b3b3b3; --good:#1b8f4a; --bad:#cc1f1f;
+      --card:#ffffff; --card-border:#efc9cc; --table-head:#c90f13;
+      --card-text:#1f1f1f; --card-text-soft:#4a4a4a;
+    }
+    body{margin:0;background:
+      radial-gradient(1200px 800px at 15% -10%, rgba(227,6,19,.08), transparent 60%),
+      radial-gradient(1100px 900px at 110% 110%, rgba(185,0,12,.08), transparent 62%),
+      radial-gradient(900px 700px at 50% 120%, rgba(214,20,28,.06), transparent 65%),
+      linear-gradient(180deg, var(--bg), var(--bg2));
+      color:var(--text); font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial;
+      min-height:100vh;
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:24px;position:relative}
+
+    /* ===== Knappstrip ===== */
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+    button{background:var(--card);color:var(--card-text);border:1px solid var(--card-border);padding:10px 12px;border-radius:12px;cursor:pointer;box-shadow:0 1px 1px rgba(0,0,0,.04);font-size:16px;min-height:44px}
+    button.primary{background:var(--accent);color:#fff;border:0}
+    button:hover{filter:brightness(.98)}
+    .danger{background:#ffe5e6;border:1px solid #f3b4b8}
+
+    /* ===== Kort / småtexter ===== */
+    .small{font-size:13px;color:var(--text-soft);font-weight:800}
+    .card{background:linear-gradient(180deg,#fff,#fff7f7);color:var(--card-text);border-radius:14px;padding:12px;border:1px solid var(--card-border);box-shadow:0 8px 24px rgba(0,0,0,.10);min-width:220px}
+    .big{font-size:18px;font-weight:800}
+    .good{color:var(--good)} .bad{color:var(--bad)}
+    .salary-box{display:flex;gap:12px;align-items:center;margin:8px 0 14px}
+    .salary-box input{font-size:16px;padding:10px 12px;border:1px solid var(--card-border);border-radius:10px;width:180px;min-height:44px}
+
+    /* ===== Snabbknappar ===== */
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--card-border);background:#fff;cursor:pointer}
+    .chip .x{font-weight:900;opacity:.5;cursor:pointer}
+
+    /* ===== Tabell ===== */
+    .table-wrap{overflow:auto;background:var(--card);padding:8px;border-radius:12px;border:1px solid var(--card-border);margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;min-width:1300px;background:#fff;border-radius:10px;overflow:hidden}
+    th,td{padding:10px 8px;border:1px solid #f1d3d5;text-align:left;vertical-align:middle}
+    th{background:var(--table-head);color:#fff;font-weight:800;white-space:nowrap}
+    .right{text-align:right}
+    tr.done{background:#e9f8ee}
+    tr.done td{border-color:#ccead3}
+
+    /* Inputs i celler (grund) */
+    td input[type="text"],
+    td input[type="number"],
+    td select{
+      width:100%; box-sizing:border-box;
+      border:1px solid var(--card-border);
+      background:#fff; color:#1f1f1f;
+      border-radius:10px; padding:10px 12px;
+      font-size:16px; line-height:1.25; min-height:44px;
+      appearance:none;
+    }
+    td input[readonly]{background:#fafafa}
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button{ -webkit-appearance: none; margin:0; }
+    input[type=number]{ -moz-appearance:textfield; }
+
+    th.notes-col{min-width:220px}
+    .row-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .row-actions button{padding:8px 10px;min-height:40px}
+
+    /* ======= NYTT: MER UTRYMME för Kategori/Typ/Betalsätt ======= */
+    th.category-col, td.category-col { min-width: 300px; }
+    th.type-col,     td.type-col     { min-width: 180px; }
+    th.pay-col,      td.pay-col      { min-width: 190px; }
+    .category-col input,
+    .type-col select,
+    .pay-col select{
+      min-height:64px;
+      padding:14px 16px;
+      font-size:18px;
+      font-weight:600;
+      line-height:1.3;
+    }
+    .type-col select option,
+    .pay-col select option{ font-size:18px; }
+
+    /* Summeringar */
+    .sum-box{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:8px; }
+    .card.salary{background:#fceef0;border-color:#f3c2c6}
+    .card.income{background:#e9f8ee;border-color:#c2e9c9}
+    .card.expense{background:#ffe8ea;border-color:#f3b4b8}
+    .card.salaryLeft{background:#fff4e7;border-color:#f6d9b5}
+    .card.balance,.card.buffer{background:#f6f7ff;border-color:#d7defa}
+
+    /* Varukorgs-badge */
+    .cart-fab{
+      position:fixed; top:56px; right:16px; z-index:11;
+      display:inline-flex; align-items:center; gap:8px;
+      background:linear-gradient(135deg,#fff,#fff7f7);
+      border:1px solid var(--card-border); border-radius:14px;
+      padding:8px 10px; box-shadow:0 6px 18px rgba(0,0,0,.18); color:#1f1f1f;
+    }
+    .cart-fab .count{min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:11px;padding:0 6px;font-weight:900;font-size:13px;background:var(--accent);color:#fff}
+
+    /* Mobil */
+    @media (max-width:600px){
+      .wrap{ padding:14px }
+      .salary-box{ flex-direction:column; align-items:stretch }
+      .salary-box input{ width:90% }
+      .sum-box{ grid-template-columns:repeat(2,minmax(0,1fr)) }
+      table{ min-width:1100px }
+      .cart-fab{ top:66px; right:12px }
+
+      th.category-col, td.category-col { min-width: 320px; }
+      th.type-col,     td.type-col     { min-width: 200px; }
+      th.pay-col,      td.pay-col      { min-width: 210px; }
+      .category-col input,
+      .type-col select,
+      .pay-col select{ min-height:60px; font-size:19px; }
+    }
+    @media (max-width:360px){
+      .sum-box{ grid-template-columns:1fr; }
+    }
+
+    /* Modal (kvitto) */
+    .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; z-index:99998;}
+    .modal{position:fixed; inset:0; display:none; place-items:center; z-index:99999;}
+    .modal.open,.modal-backdrop.open{display:grid}
+    .modal-card{width:min(92vw,720px); background:#fff; color:#1f1f1f; border-radius:16px; border:1px solid var(--card-border); box-shadow:0 20px 80px rgba(0,0,0,.35); overflow:hidden;}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.08)}
+    .modal-body{padding:12px 14px; display:grid; gap:10px}
+    .modal-actions{display:flex; gap:8px; justify-content:flex-end; padding:12px 14px; border-top:1px solid rgba(0,0,0,.08)}
+    .modal input[type="email"]{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--card-border); background:#fff; color:#1f1f1f; font-size:16px; min-height:44px}
+    .receipt{font:14px/1.4 ui-sans-serif; background:#fff; color:#222; border:1px dashed #e5a3a8; border-radius:12px; padding:12px; max-height:46vh; overflow:auto;}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; font-weight:700; font-size:12px; background:#f6f6f6}
+
+    /* ===== Glasig vaktskärm ===== */
+    .gate{position:fixed; inset:0; display:grid; place-items:center; z-index:100000; backdrop-filter: blur(14px); background:rgba(23,19,20,.28);}
+    .gate .panel{ width:clamp(300px, 92vw, 420px); border-radius:20px; padding:18px 16px 14px; background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.72)); border:1px solid rgba(255,255,255,.55); box-shadow:0 20px 80px rgba(0,0,0,.40); }
+    .gate h1{margin:6px 0 12px; font-size:20px; text-align:center;}
+    .pinbox{display:flex; gap:8px; justify-content:center; margin:6px 0 12px}
+    .pinbox input{width:54px; height:54px; border-radius:12px; text-align:center; font-size:22px; letter-spacing:2px; border:1px solid #e8c5c7; background:#fff}
+    .kbd{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:8px 0}
+    .kbd button{font-size:18px; min-height:52px; border-radius:14px}
+    .gate .row{display:flex; justify-content:space-between; align-items:center}
+    .gate .hint{font-size:12px; color:#777}
+    .hidden{display:none !important}
+
+    /* Stor tumvänlig checkruta */
+    .checkcell{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; cursor:pointer; user-select:none; }
+    .checkcell input{ position:absolute; opacity:0; width:0; height:0; }
+    .checkcell .box{ position:relative; width:28px; height:28px; border-radius:8px; border:2px solid #d7a7aa; background:#fff; box-shadow: inset 0 1px 0 rgba(0,0,0,.03); }
+    .checkcell input:focus-visible + .box{ box-shadow:0 0 0 3px rgba(227,6,19,.35); }
+    .checkcell input:checked + .box{ background:linear-gradient(180deg,#e30613,#cc0d18); border-color:#a90b11; }
+    .checkcell input:checked + .box::after{ content:""; position:absolute; left:8px; top:4px; width:8px; height:16px; border:3px solid #fff; border-top:0; border-left:0; transform:rotate(45deg); }
+    th:first-child, td:first-child{ width:56px; }
+  </style>
+</head>
+<body>
+  <!-- Varukorgs-badge -->
+  <div class="cart-fab" id="cartFab" role="button" tabindex="0" title="Visa kvitto / skicka">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 0a2 2 0 1 0 .001 3.999A2 2 0 0 0 17 18ZM3 3h2l2.4 10.4A3 3 0 0 0 10.3 16h6.9a3 3 0 0 0 2.9-2.2L22 7H6.2" fill="currentColor"/></svg>
+    <span id="cartCount" class="count">0</span>
+  </div>
+
+  <div class="wrap" aria-live="polite">
+    <!-- Knapp-list -->
+    <div class="controls">
+      <button class="primary" id="addRowBtn">+ Lägg till vara</button>
+      <button id="shareBtn">Dela länk</button>
+      <button id="shareImageBtn">Dela bild</button>
+      <button id="copyBtn">Kopiera</button>
+      <button id="clearChecksBtn">Rensa check</button>
+      <button id="logoutBtn">Logga ut</button>
+      <button id="resetBtn" class="danger" title="Nollställ allt till 0">Nollställ</button>
+      <!-- NY: nollställ endast kategori-minnet -->
+      <button id="resetMemBtn" title="Rensa lagrade kategorier">Nollställ minne</button>
+    </div>
+
+    <!-- Snabbknappar -->
+    <div class="chips" id="chips">
+      <button id="addChipBtn" title="Lägg till snabbknapp">+ Lägg till snabbknapp</button>
+    </div>
+
+    <!-- Månadsbudget -->
+    <div class="card salary-box">
+      <div>
+        <div class="small">Månads netto</div>
+        <input id="salaryInput" type="number" step="1" min="0" placeholder="t.ex. 3 500 (matbudget)" />
+      </div>
+      <div class="small">Används i beräkningarna: <strong>Månads netto − (Totala varukorgen − Kampanjer)</strong></div>
+    </div>
+
+    <!-- Tabell -->
+    <div class="table-wrap card">
+      <table id="budgetTable" aria-label="Varukorg">
+        <thead>
+          <tr>
+            <th>✓</th>
+            <th class="category-col">Kategori</th>
+            <th style="width:110px">Antal</th>
+            <th style="width:110px">Enhet</th>
+            <th style="width:140px">à-pris (nu)</th>
+            <th style="width:140px">Ord. à-pris</th>
+            <th style="width:120px">Belopp</th>
+            <th class="type-col">Typ</th>
+            <th class="pay-col">Betalsätt</th>
+            <th class="notes-col">Anteckningar</th>
+            <th style="width:230px">Åtgärd</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="11" class="empty-cell" style="padding:18px;color:#9b9b9b;text-align:center"><em>Inga rader ännu — klicka <strong>+ Lägg till vara</strong> eller använd en snabbknapp.</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summering -->
+    <div class="sum-box">
+      <div class="card salary"><div class="small">Matkostnad</div><div id="salaryDisplay" class="big">0 kr</div></div>
+      <div class="card salaryLeft"><div class="small">Kvar i matpengar</div><div id="salaryLeft" class="big">0 kr</div></div>
+      <div class="card income"><div class="small">Kampanjer</div><div id="totalIncome" class="big good">0 kr</div></div>
+      <div class="card expense"><div class="small">Totala varukorgen</div><div id="totalExpense" class="big bad">0 kr</div></div>
+      <div class="card balance"><div class="small">Att betala i kassan</div><div id="balance" class="big">0 kr</div></div>
+      <div class="card buffer"><div class="small">Sparat på maten</div><div id="buffer" class="big">0 kr</div></div>
+    </div>
+  </div>
+
+  <!-- Kvitto-modal -->
+  <div class="modal-backdrop" id="receiptBackdrop" aria-hidden="true"></div>
+  <div class="modal" id="receiptModal" role="dialog" aria-modal="true" aria-labelledby="receiptTitle" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="receiptTitle" style="margin:0;font-size:18px;">Kvitto</h3>
+        <span class="pill" id="receiptMeta">–</span>
+        <button id="receiptCloseBtn" title="Stäng">Stäng</button>
+      </div>
+      <div class="modal-body">
+        <label class="small" for="receiptEmail">Skicka till e-post</label>
+        <input type="email" id="receiptEmail" placeholder="namn@exempel.se" />
+        <div class="receipt" id="receiptPreview"><em>Inget att visa ännu.</em></div>
+      </div>
+      <div class="modal-actions">
+        <button id="receiptCopyBtn">Kopiera HTML</button>
+        <button id="receiptPdfBtn">Spara PDF</button>
+        <button id="receiptPrintBtn">Skriv ut</button>
+        <button class="primary" id="receiptSendBtn">Skicka</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Glasig vaktskärm -->
+  <div class="gate hidden" id="gate">
+    <div class="panel">
+      <h1>Varukorgen</h1>
+      <form id="pinForm" autocomplete="off">
+        <div class="pinbox">
+          <input id="pin" inputmode="numeric" type="tel" maxlength="4" placeholder="••••" aria-label="PIN-kod" />
+        </div>
+        <div class="kbd">
+          <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+          <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+          <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+          <button type="button" id="clearPin">C</button><button type="button" data-k="0">0</button><button type="submit" id="okPin">OK</button>
+        </div>
+      </form>
+      <div class="row"><span class="hint">Säker session stängs efter 60 min inaktivitet</span></div>
+    </div>
+  </div>
+
+  <!-- NY: datalist för kategoriminnet (förslagsmeny) -->
+  <datalist id="catMemList"></datalist>
+
+<script>
+(function(){
+  // Varukorg – egen backend (din nya Apps Script-URL)
+const CLOUD = {
+  endpoint: 'https://script.google.com/macros/s/AKfycbxAC8t_K50mWAijOwyIcl6dLJ3P7IVJXeWRY6Z8VqqjehyW3Lh2jZS2YBfqWmCcFmdk_w/exec',
+  secret: '' // eller t.ex. 'CartSecret123' om du sätter SECRET i Apps Script
+};
+
+// Varukorg – egna nyckelprefix (isolerar allt)
+function cloudKey(){ return 'cart_' + getKey(); }
+const LS_ROWS   = ()=>`cart_rows_v1_${getKey()}`;
+const LS_SALARY = ()=>`cart_salary_v1_${getKey()}`;
+const LS_MEMCAT = ()=>`cart_cat_memory_v1_${getKey()}`;
+const LS_QUICK  = ()=>`cart_quick_items_v1_${getKey()}`;
+
+  const tbody = document.getElementById('tbody');
+  const addRowBtn = document.getElementById('addRowBtn');
+  const shareBtn = document.getElementById('shareBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const resetMemBtn = document.getElementById('resetMemBtn'); // NY
+  const clearChecksBtn = document.getElementById('clearChecksBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const chipsWrap = document.getElementById('chips');
+  const addChipBtn = document.getElementById('addChipBtn');
+
+  const totalIncomeEl=document.getElementById('totalIncome'), totalExpenseEl=document.getElementById('totalExpense'), balanceEl=document.getElementById('balance');
+  const salaryInput=document.getElementById('salaryInput'), salaryLeftEl=document.getElementById('salaryLeft'), salaryDisplayEl=document.getElementById('salaryDisplay'), bufferEl=document.getElementById('buffer');
+  const cartCountEl=document.getElementById('cartCount'), cartFab=document.getElementById('cartFab');
+  const catMemList = document.getElementById('catMemList');
+
+  const fmtSEK0 = n => new Intl.NumberFormat('sv-SE', { style:'currency', currency:'SEK', maximumFractionDigits:0 }).format(Math.round(n||0));
+
+  let rows = []; let salary = 0;
+  function debounce(fn,wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(null,a),wait); }; }
+  let isLoadingFromCloud=false; const cloudSaveDebounced = debounce(cloudSave,700);
+
+  /* ===== Kategori-minne ===== */
+  const CATMEM_KEY = 'cart_category_memory';
+  function loadCatMem(){
+    try{ const arr=JSON.parse(localStorage.getItem(CATMEM_KEY)||'[]'); return Array.isArray(arr)?arr.filter(Boolean):[]; }catch(_){ return []; }
+  }
+  function saveCatMem(list){
+    try{ localStorage.setItem(CATMEM_KEY, JSON.stringify(list.slice(0,200))); }catch(_){}
+    renderCatMemList();
+  }
+  function rememberCategory(val){
+    const v=(val||'').trim();
+    if(!v) return;
+    const list=loadCatMem();
+    const exists=list.findIndex(x=>String(x).toLowerCase()===v.toLowerCase());
+    if(exists>-1){ // flytta upp
+      list.splice(exists,1);
+      list.unshift(v);
+    } else {
+      list.unshift(v);
+    }
+    saveCatMem(list);
+  }
+  function renderCatMemList(){
+    const list=loadCatMem();
+    catMemList.innerHTML = list.map(v=>`<option value="${escapeHtml(v)}"></option>`).join('');
+  }
+
+  /* ====== Moln Save/Load ====== */
+  function payload(){ return { rows, salary:Number(salary)||0, updatedAt:Date.now() }; }
+  async function cloudSave(){ if(!cloudEnabled()||isLoadingFromCloud) return; try{ const form=new URLSearchParams(); form.set('op','save'); form.set('key',cloudKey()); form.set('secret',CLOUD.secret||''); form.set('data',JSON.stringify(payload())); const res=await fetch(CLOUD.endpoint,{method:'POST',body:form}); await res.text(); }catch(e){ console.warn('Molnsave fel',e); } }
+  async function cloudLoad(){
+    if(!cloudEnabled()) return; isLoadingFromCloud=true;
+    try{
+      const form=new URLSearchParams(); form.set('op','load'); form.set('key',cloudKey()); form.set('secret',CLOUD.secret||'');
+      const res=await fetch(CLOUD.endpoint,{method:'POST',body:form}); const text=await res.text(); let json; try{ json=JSON.parse(text); }catch(_){}
+      const data=json&&(json.data||json);
+      if(data && Array.isArray(data.rows)){
+        rows=data.rows.map(r=>({category:r.category||'', qty:Number(r.qty??1)||1, unit:r.unit||'st', unitPrice:Number(r.unitPrice??0)||0, unitPriceOrd:Number(r.unitPriceOrd??0)||0, amount:Number(r.amount)||0, type:r.type==='Varukampanj'?'Varukampanj':'Butiksvara', pay:(typeof r.pay==='string')?r.pay:'', note:r.note||'', done:!!r.done}));
+        rows.forEach((_,i)=>recalcRow(i,true));
+      }
+      if(typeof data?.salary!=='undefined'){ salary=Number(data.salary)||0; salaryInput.value=salary||''; }
+    }catch(e){ console.warn('Molnload fel',e);
+    }finally{ render(); updateTotals(); setTimeout(()=>{isLoadingFromCloud=false;},0); }
+  }
+
+  /* ====== Snabbknappar ====== */
+  function loadChips(){
+    const list=JSON.parse(localStorage.getItem('cart_quick_items')||'[]');
+    chipsWrap.querySelectorAll('.chip').forEach(e=>e.remove());
+    list.forEach((c,idx)=>{
+      const el=document.createElement('div'); el.className='chip';
+      el.innerHTML=`<span>${escapeHtml(c.label)}</span><span class="x" title="Ta bort" data-i="${idx}">×</span>`;
+      el.addEventListener('click',(ev)=>{ if(ev.target.classList.contains('x')) return; addRowFromChip(c); });
+      el.querySelector('.x').addEventListener('click',(ev)=>{ ev.stopPropagation(); const arr=JSON.parse(localStorage.getItem('cart_quick_items')||'[]'); arr.splice(idx,1); localStorage.setItem('cart_quick_items',JSON.stringify(arr)); loadChips(); });
+      chipsWrap.insertBefore(el, addChipBtn);
+    });
+  }
+  function addRowFromChip(c){
+    rows.push({ category:c.label||'', qty:1, unit:'st', unitPrice:Number(c.price||0), unitPriceOrd:0, amount:Number(c.price||0), type:'Butiksvara', pay:'', note:'', done:false });
+    rememberCategory(c.label||''); // NY: minnesinlärning även via snabbknapp
+    const i=rows.length-1; recalcRow(i,true); render(); updateTotals();
+  }
+  addChipBtn.addEventListener('click',()=>{
+    const label=prompt('Namn på snabbknapp (t.ex. "Mjölk")');
+    if(!label) return;
+    const p=prompt('Valfritt: à-pris (kr, t.ex. 18.90)');
+    const list=JSON.parse(localStorage.getItem('cart_quick_items')||'[]');
+    list.push({label:label.trim(),price:Number(p)||0});
+    localStorage.setItem('cart_quick_items', JSON.stringify(list));
+    loadChips();
+  });
+
+  /* ====== INIT ====== */
+  function init(){
+    renderCatMemList(); // NY
+
+    const rawSalary=localStorage.getItem('cart_salary')||'0';
+    salary=Number(rawSalary)||0;
+    salaryInput.value=salary||'';
+    salaryInput.addEventListener('input', ()=>{
+      salary=Number(salaryInput.value)||0;
+      localStorage.setItem('cart_salary', String(salary));
+      updateTotals();
+    });
+
+    try{
+      const stored=JSON.parse(localStorage.getItem('cart_rows')||'[]');
+      if(Array.isArray(stored)) rows=stored.map(r=>({category:r.category||'', qty:Number(r.qty??1)||1, unit:r.unit||'st', unitPrice:Number(r.unitPrice??0)||0, unitPriceOrd:Number(r.unitPriceOrd??0)||0, amount:Number(r.amount)||0, type:r.type==='Varukampanj'?'Varukampanj':'Butiksvara', pay:(typeof r.pay==='string')?r.pay:'', note:r.note||'', done:!!r.done}));
+    }catch(_){}
+
+    ensureKey();
+    render(); updateTotals();
+    setupReceiptModal();
+    loadChips();
+    secureGate.init();
+
+    addRowBtn.addEventListener('click', addEmptyRow);
+
+    cloudLoad();
+
+    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') cloudSave(); });
+
+    ['click','keydown','pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev, secureGate.bump));
+    document.addEventListener('visibilitychange', secureGate.bump);
+
+    // NY: rensa bara kategori-minnet
+    resetMemBtn.addEventListener('click', ()=>{
+      if(!confirm('Rensa sparade kategorier (minnet)? Detta påverkar inte varor eller budget.')) return;
+      localStorage.removeItem(CATMEM_KEY);
+      renderCatMemList();
+      alert('Kategori-minnet är rensat.');
+    });
+  }
+
+  // Lägg till tom rad
+  function addEmptyRow(){
+    rows.push({ category:'', qty:1, unit:'st', unitPrice:0, unitPriceOrd:0, amount:0, type:'Butiksvara', pay:'', note:'', done:false });
+    const i=rows.length-1;
+    recalcRow(i,true);
+    render(); updateTotals();
+    setTimeout(()=>{
+      const lastInput=document.querySelector('#tbody tr:last-child td.category-col input');
+      if(lastInput){ lastInput.setAttribute('list','catMemList'); lastInput.focus({preventScroll:false}); lastInput.scrollIntoView({block:'center',behavior:'smooth'}); }
+    }, 0);
+  }
+
+  /* ====== Render & events ====== */
+  function render(){
+    tbody.innerHTML='';
+    if(rows.length===0){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td colspan="11" class="empty-cell"><div class="empty-row">Inga rader ännu — klicka <strong>+ Lägg till vara</strong> eller använd en snabbknapp.</div></td>`;
+      tbody.appendChild(tr);
+      updateTotals(); save(); return;
+    }
+    rows.forEach((r,i)=>{
+      if(r.type==='Utgift') r.type='Butiksvara';
+      if(r.type==='Inkomst') r.type='Varukampanj';
+      const tr=document.createElement('tr'); tr.dataset.index=i;
+      if(r.done) tr.classList.add('done');
+
+      tr.innerHTML = `
+        <td>
+          <label class="checkcell" title="Markera klar">
+            <input type="checkbox" data-i="${i}" data-col="done" ${r.done?'checked':''} aria-label="Markera klar">
+            <span class="box" aria-hidden="true"></span>
+          </label>
+        </td>
+        <td class="category-col">
+          <input type="text" data-i="${i}" data-col="category" value="${escapeHtml(r.category)}" placeholder="T.ex. Ägg" list="catMemList">
+        </td>
+        <td><input type="number" data-i="${i}" data-col="qty" value="${r.qty}" min="0" step="1" inputmode="numeric"></td>
+        <td>
+          <select data-i="${i}" data-col="unit">
+            <option value="st" ${r.unit==='st'?'selected':''}>st</option>
+            <option value="kg" ${r.unit==='kg'?'selected':''}>kg</option>
+          </select>
+        </td>
+        <td><input type="number" data-i="${i}" data-col="unitPrice" value="${r.unitPrice}" step="0.01" inputmode="decimal" placeholder="0.00"></td>
+        <td><input type="number" data-i="${i}" data-col="unitPriceOrd" value="${r.unitPriceOrd||0}" step="0.01" inputmode="decimal" placeholder="0.00"></td>
+        <td class="right"><input type="number" data-i="${i}" data-col="amount" value="${Math.round(r.amount)}" readonly></td>
+        <td class="type-col">
+          <select data-i="${i}" data-col="type">
+            <option ${r.type==='Butiksvara'?'selected':''}>Butiksvara</option>
+            <option ${r.type==='Varukampanj'?'selected':''}>Varukampanj</option>
+          </select>
+        </td>
+        <td class="pay-col">
+          <select data-i="${i}" data-col="pay">
+            <option value="" ${(!r.pay||r.pay==='')?'selected':''}>-</option>
+            <option value="Kort" ${r.pay==='Kort'?'selected':''}>Kort</option>
+            <option value="Mastercard" ${r.pay==='Mastercard'?'selected':''}>Mastercard</option>
+            <option value="Visa" ${r.pay==='Visa'?'selected':''}>Visa</option>
+            <option value="Swish" ${r.pay==='Swish'?'selected':''}>Swish</option>
+            <option value="Klarna" ${r.pay==='Klarna'?'selected':''}>Klarna</option>
+            <option value="Kontant" ${r.pay==='Kontant'?'selected':''}>Kontant</option>
+            <option value="Faktura" ${r.pay==='Faktura'?'selected':''}>Faktura</option>
+          </select>
+        </td>
+        <td class="notes-col"><input type="text" data-i="${i}" data-col="note" value="${escapeHtml(r.note||'')}" placeholder="Anteckningar (valfritt)"></td>
+        <td class="row-actions">
+          <button data-action="rabatt" data-i="${i}" title="Lägg/ändra rabatt">Rabatt</button>
+          <button data-action="up" data-i="${i}" title="Flytta upp">↑</button>
+          <button data-action="down" data-i="${i}" title="Flytta ner">↓</button>
+          <button data-action="neg" data-i="${i}" title="Växla ±">±</button>
+          <button data-action="del" data-i="${i}" title="Ta bort" style="background:#ffe5e6">Ta bort</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    attachEvents(); updateTotals(); save();
+  }
+
+  function attachEvents(){
+    tbody.querySelectorAll('input[data-col], select[data-col]').forEach(el=>{
+      const handler=()=>{
+        const i=+el.dataset.i, col=el.dataset.col;
+        if(!rows[i]) return;
+        if(col==='done'){ rows[i].done=!!el.checked; el.closest('tr')?.classList.toggle('done', rows[i].done); save(); return; }
+
+        if(col==='qty'||col==='unitPrice'||col==='unitPriceOrd'||col==='unit'){
+          if(col==='qty') rows[i].qty=Math.max(0, Math.round(Number(el.value)||0));
+          else if(col==='unit') rows[i].unit=el.value;
+          else rows[i][col]=Number(el.value)||0;
+          recalcRow(i);
+        } else if(col==='category' || col==='note' || col==='pay' || col==='type'){
+          rows[i][col]=el.value;
+          if(col==='type') recalcRow(i);
+        }
+        updateTotals(); save();
+      };
+      el.addEventListener('input', handler);
+      el.addEventListener('change', handler);
+
+      // NY: lär in kategori när man lämnar fältet (eller väljer förslag)
+      if(el.dataset.col === 'category'){
+        el.addEventListener('blur', ()=>{ rememberCategory(el.value); });
+      }
+
+      if(el.dataset.col==='unitPrice'||el.dataset.col==='unitPriceOrd'){
+        el.onfocus = ()=>{ if(el.value==='0' || el.value==='') el.value=''; };
+        el.onblur  = ()=>{ if(el.value==='' || isNaN(Number(el.value))){ el.value='0'; handler(); } };
+      }
+      if(el.dataset.col==='qty'){
+        el.onblur  = ()=>{ if(el.value==='' || isNaN(Number(el.value))){ el.value='1'; handler(); } };
+      }
+    });
+
+    // Radknappar
+    tbody.querySelectorAll('button[data-action]').forEach(btn=>{
+      btn.onclick=()=>{
+        const i=+btn.dataset.i, act=btn.dataset.action;
+        if(act==='del'){ rows.splice(i,1); render(); }
+        else if(act==='neg'){ rows[i].amount=-Math.abs(rows[i].amount||0); rows[i].type=(rows[i].amount<0?'Varukampanj':'Butiksvara'); render(); }
+        else if(act==='up'){ if(i>0) moveRow(i,i-1); }
+        else if(act==='down'){ if(i<rows.length-1) moveRow(i,i+1); }
+        else if(act==='rabatt'){ promptDiscount(i); }
+      };
+    });
+  }
+
+  function moveRow(from,to){ if(from<0||to<0||from>=rows.length||to>=rows.length) return; const item=rows.splice(from,1)[0]; rows.splice(to,0,item); render(); }
+
+  /* ===== Rabattlogik & beräkning ===== */
+  function recalcRow(i, silent=false){
+    const r=rows[i]; if(!r) return;
+    const qty=Math.max(0, Number(r.qty)||0);
+    const now=Number(r.unitPrice)||0;
+    const ord=Number(r.unitPriceOrd)||0;
+    r.amount=Math.round(qty * now);
+    const discount=Math.max(0, Math.round((ord - now) * qty));
+    ensureDiscountRowFor(i, discount, true);
+
+    if(!silent){
+      const amountInput=tbody.querySelector(`input[data-col="amount"][data-i="${i}"]`);
+      if(amountInput) amountInput.value=String(r.amount);
+    }
+  }
+  function promptDiscount(i){
+    const base=rows[i]; if(!base) return;
+    const ord=prompt('Ordinarie à-pris (kr):', String(base.unitPriceOrd||0));
+    if(ord===null) return;
+    const now=prompt('Nuvarande à-pris (kr):', String(base.unitPrice||0));
+    if(now===null) return;
+    base.unitPriceOrd=Number(ord)||0;
+    base.unitPrice=Number(now)||0;
+    recalcRow(i);
+    render();
+  }
+  function findDiscountRowIndex(i){
+    const base=rows[i]; if(!base) return -1;
+    const j=i+1, r=rows[j];
+    if(!r || r.type!=='Varukampanj') return -1;
+    const baseCat=(base.category||'').trim().toLowerCase();
+    const note=(r.note||'').trim().toLowerCase();
+    const cat=(r.category||'').trim().toLowerCase();
+    const looksLinked=(note.startsWith('rabatt på ') && (baseCat ? note.includes(baseCat) : true)) || (cat==='rabatt/kupong');
+    return looksLinked ? j : -1;
+  }
+  function ensureDiscountRowFor(i, amount){
+    const base=rows[i]; if(!base) return;
+    const amt=Math.max(0, Math.round(Number(amount)||0));
+    const label=String(base.category||'').trim();
+    const note=`Rabatt på ${label || 'vara'}`;
+    const j=findDiscountRowIndex(i);
+
+    if(amt<=0){ if(j>-1){ rows.splice(j,1); } return; }
+    if(j>-1){
+      rows[j].amount=amt; rows[j].note=note; rows[j].category='Rabatt/Kupong';
+    } else {
+      rows.splice(i+1,0,{ category:'Rabatt/Kupong', amount:amt, type:'Varukampanj', pay:'', note, qty:1, unit:'st', unitPrice:amt, unitPriceOrd:0, done:false });
+    }
+  }
+
+  /* ------- Summering ------- */
+  function updateTotals(){
+    let sumIncome=0, sumExpense=0;
+    rows.forEach(r=>{
+      const amt=Number(r.amount)||0;
+      if(r.type==='Varukampanj') sumIncome += amt;
+      else sumExpense += amt;
+    });
+
+    totalExpenseEl.textContent = fmtSEK0(sumExpense);
+    totalIncomeEl.textContent  = fmtSEK0(sumIncome);
+
+    const toPay = Math.max(0, Math.round(sumExpense - sumIncome));
+    balanceEl.textContent = fmtSEK0(toPay);
+    salaryDisplayEl.textContent = fmtSEK0(toPay);
+
+    const s=Number(salary)||0;
+    const kvar=Math.round(s - toPay);
+    salaryLeftEl.textContent = fmtSEK0(kvar);
+    bufferEl.textContent     = fmtSEK0(kvar);
+
+    salaryLeftEl.classList.toggle('bad', kvar < 0);
+    salaryLeftEl.classList.toggle('good', kvar >= 0);
+    bufferEl.classList.toggle('bad', kvar < 0);
+    bufferEl.classList.toggle('good', kvar >= 0);
+
+    const itemCount=rows.reduce((acc,r)=> acc + (r.type==='Butiksvara' && (r.category||'').trim()!=='' ? (Number(r.qty)||1) : 0), 0);
+    if(cartCountEl) cartCountEl.textContent = String(itemCount);
+
+    save();
+  }
+
+  /* ------- Helpers ------- */
+  function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function save(){ localStorage.setItem('cart_rows', JSON.stringify(rows)); if(cloudEnabled()) cloudSaveDebounced(); }
+
+  /* ------- Reset / Checkar ------- */
+  resetBtn.onclick = ()=>{
+    if(!confirm('Nollställa rader + matbudget + snabbknappar?')) return;
+    rows = []; salary = 0; salaryInput.value = '';
+    localStorage.removeItem('cart_rows'); localStorage.removeItem('cart_salary');
+    localStorage.removeItem('cart_quick_items'); // OBS: minnet rörs inte
+    loadChips();
+    render(); updateTotals();
+  };
+  clearChecksBtn.onclick = ()=>{ rows.forEach(r=> r.done=false); render(); updateTotals(); };
+
+  /* ------- Delning ------- */
+  shareBtn.onclick = copyBtn.onclick = ()=>{
+    const link = location.href;
+    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
+      .then(()=> alert('Länk kopierad.'))
+      .catch(()=> prompt('Kopiera manuellt:', link));
+  };
+
+  /* ======= Kvitto ======= */
+  const receiptModal   = document.getElementById('receiptModal');
+  const receiptBackdrop= document.getElementById('receiptBackdrop');
+  const receiptPreview = document.getElementById('receiptPreview');
+  const receiptEmail   = document.getElementById('receiptEmail');
+  const btnReceiptSend = document.getElementById('receiptSendBtn');
+  const btnReceiptClose= document.getElementById('receiptCloseBtn');
+  const btnReceiptCopy = document.getElementById('receiptCopyBtn');
+  const btnReceiptPrint= document.getElementById('receiptPrintBtn');
+  const btnReceiptPdf  = document.getElementById('receiptPdfBtn');
+
+  function setupReceiptModal(){
+    function openFromFab(){ buildAndShowReceipt(); }
+    cartFab.addEventListener('click', openFromFab);
+    cartFab.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); openFromFab(); } });
+
+    btnReceiptClose.onclick = closeReceipt;
+    receiptBackdrop.onclick = closeReceipt;
+
+    btnReceiptCopy.onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(buildReceiptHtml()); alert('Kvitto (HTML) kopierat.'); }
+      catch(_){ alert('Kunde inte kopiera.'); }
+    };
+    const printNow = ()=>{
+      const html = buildReceiptHtml();
+      const w = window.open('', '_blank', 'noopener');
+      if(!w) return alert('Popup blockerad. Tillåt popups eller prova igen.');
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Kvitto</title>
+        <style>body{font:14px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial;padding:16px}</style>
+      </head><body>${html}</body></html>`);
+      w.document.close(); w.focus(); w.print();
+    };
+    btnReceiptPrint.onclick = printNow;
+    btnReceiptPdf.onclick = printNow;
+
+    btnReceiptSend.onclick = ()=> alert('E-post kan kopplas här (t.ex. via Apps Script).');
+  }
+  function openReceipt(){ receiptModal.classList.add('open'); receiptBackdrop.classList.add('open'); receiptModal.setAttribute('aria-hidden','false'); setTimeout(()=> receiptEmail.focus(), 0); }
+  function closeReceipt(){ receiptModal.classList.remove('open'); receiptBackdrop.classList.remove('open'); receiptModal.setAttribute('aria-hidden','true'); }
+  function buildAndShowReceipt(){
+    const items = rows.filter(r => r.type==='Butiksvara' && (r.category||'').trim()!=='');
+    if(items.length===0){ alert('Lägg till minst en vara först.'); return; }
+    receiptPreview.innerHTML = buildReceiptHtml();
+    document.getElementById('receiptMeta').textContent = new Date().toLocaleString('sv-SE');
+    openReceipt();
+  }
+  function buildReceiptHtml(){
+    const items = rows.filter(r => r.type==='Butiksvara' && (r.category||'').trim()!=='');
+    const promos= rows.filter(r => r.type==='Varukampanj' && (Number(r.amount)||0)>0);
+    const sumItems = items.reduce((a,b)=> a + (Number(b.amount)||0), 0);
+    const sumPromos= promos.reduce((a,b)=> a + (Number(b.amount)||0), 0);
+    const toPay = Math.max(0, Math.round(sumItems - sumPromos));
+    const fmt = n => new Intl.NumberFormat('sv-SE',{style:'currency',currency:'SEK',maximumFractionDigits:0}).format(Math.round(n));
+
+    const rowsHtml = items.map(it=>`
+      <tr>
+        <td>${escapeHtml(it.category)}</td>
+        <td style="text-align:right">${it.qty||1} ${escapeHtml(it.unit||'st')}</td>
+        <td style="text-align:right">${fmt(it.unitPrice||0)}</td>
+        <td style="text-align:right">${fmt(it.amount||0)}</td>
+        <td>${escapeHtml(it.note||'')}</td>
+      </tr>`).join('');
+    const promoHtml = promos.length ? `
+      <tr>
+        <td style="font-weight:700">Kampanjer</td>
+        <td></td><td></td>
+        <td style="text-align:right; color:#1b8f4a; font-weight:700">−${fmt(sumPromos)}</td>
+        <td></td>
+      </tr>` : '';
+    return `
+<div style="max-width:760px;margin:0 auto">
+  <div style="font-weight:900;letter-spacing:.2px;margin:0 0 6px">Varukorgen</div>
+  <table style="width:100%;border-collapse:collapse">
+    <thead>
+      <tr>
+        <th style="text-align:left;border-bottom:1px solid #eee;padding:6px">Vara</th>
+        <th style="text-align:right;border-bottom:1px solid #eee;padding:6px">Antal</th>
+        <th style="text-align:right;border-bottom:1px solid #eee;padding:6px">à-pris</th>
+        <th style="text-align:right;border-bottom:1px solid #eee;padding:6px">Radpris</th>
+        <th style="text-align:left;border-bottom:1px solid #eee;padding:6px">Anteckning</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHtml || `<tr><td colspan="5" style="padding:8px;color:#888">Inga varor</td></tr>`}
+    </tbody>
+    <tfoot>
+      ${promoHtml}
+      <tr>
+        <td colspan="3" style="font-weight:700">Att betala</td>
+        <td style="text-align:right;font-weight:900">${fmt(toPay)}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>`;
+  }
+
+  /* ======== Vaktskärm / PIN ======== */
+  const secureGate=(function(){
+    const PIN_OK='8987';
+    const MAX_IDLE=60*60*1000; // 60 min
+    const gate=document.getElementById('gate');
+    const pinForm=document.getElementById('pinForm');
+    const pinInput=document.getElementById('pin');
+    const clearPinBtn=document.getElementById('clearPin');
+
+    function show(){ gate.classList.remove('hidden'); setTimeout(()=>pinInput.focus(), 0); }
+    function hide(){ gate.classList.add('hidden'); }
+    function now(){ return Date.now(); }
+
+    function isAuth(){
+      try{
+        const raw=sessionStorage.getItem('AUTH_OK');
+        if(!raw) return false;
+        const obj=JSON.parse(raw);
+        return obj && obj.expireAt && obj.expireAt > now();
+      }catch(_){ return false; }
+    }
+    function setAuth(){ const expireAt=now()+MAX_IDLE; sessionStorage.setItem('AUTH_OK', JSON.stringify({expireAt})); }
+    function clearAuth(){ sessionStorage.removeItem('AUTH_OK'); }
+
+    function checkPin(s){ return String(s||'').trim() === PIN_OK; }
+
+    function onSubmit(ev){
+      ev.preventDefault();
+      if(checkPin(pinInput.value)){ setAuth(); hide(); }
+      else { pinInput.value=''; alert('Fel PIN'); }
+    }
+    function onKeyBtn(ev){
+      const k=ev.target.getAttribute('data-k'); if(!k) return;
+      if(pinInput.value.length < 4){ pinInput.value += k; }
+      if(pinInput.value.length === 4){
+        if(checkPin(pinInput.value)){ setAuth(); hide(); }
+        else { pinInput.value=''; alert('Fel PIN'); }
+      }
+    }
+    function bump(){ if(!isAuth()) return; setAuth(); }
+    function tick(){ if(!isAuth()){ show(); } setTimeout(tick, 15000); }
+
+    function init(){
+      pinForm.querySelectorAll('[data-k]').forEach(b=> b.addEventListener('click', onKeyBtn));
+      clearPinBtn.addEventListener('click', ()=> pinInput.value='');
+      pinInput.addEventListener('input', ()=>{
+        if(pinInput.value.replace(/\D/g,'').length === 4){
+          if(checkPin(pinInput.value)){ setAuth(); hide(); }
+          else { pinInput.value=''; alert('Fel PIN'); }
+        }
+      });
+      pinForm.addEventListener('submit', onSubmit);
+      if(isAuth()) hide(); else show();
+      tick();
+    }
+
+    logoutBtn.addEventListener('click', ()=>{ clearAuth(); show(); });
+
+    return { init, bump, logout: ()=>{ clearAuth(); show(); } };
+  })();
+
+  /* GO */
+  init();
+
+})();
+</script>
+</body>
+</html>
