@@ -278,16 +278,12 @@
 <script>
 (function(){
   const CLOUD = {
-  endpoint: 'https://script.google.com/macros/s/AKfycbxAC8t_K50mWAijOwyIcl6dLJ3P7IVJXeWRY6Z8VqqjehyW3Lh2jZS2YBfqWmCcFmdk_w/exec',
-  secret: '' // eller t.ex. 'CartSecret123' om du sätter SECRET i Apps Script
-};
-
-// Varukorg – egna nyckelprefix (isolerar allt)
-function cloudKey(){ return 'cart_' + getKey(); }
-const LS_ROWS   = ()=>`cart_rows_v1_${getKey()}`;
-const LS_SALARY = ()=>`cart_salary_v1_${getKey()}`;
-const LS_MEMCAT = ()=>`cart_cat_memory_v1_${getKey()}`;
-const LS_QUICK  = ()=>`cart_quick_items_v1_${getKey()}`;
+    endpoint: 'https://script.google.com/macros/s/AKfycbxG3zENX_dIBGbn1zzNWJo9UnZikx-TofN7VjqaYmkQv0ghaPXJ_xB5jhd_3WQOsQ_R/exec',
+    secret: ''
+  };
+  function cloudKey(){ const u = new URL(location.href); return (u.searchParams.get('key')||'').trim(); }
+  function ensureKey(){ if (CLOUD.endpoint && !cloudKey()){ const k=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2,10)); const url=new URL(location.href); url.searchParams.set('key',k); history.replaceState(null,'',url);} }
+  function cloudEnabled(){ return !!CLOUD.endpoint && !!cloudKey(); }
 
   const tbody = document.getElementById('tbody');
   const addRowBtn = document.getElementById('addRowBtn');
