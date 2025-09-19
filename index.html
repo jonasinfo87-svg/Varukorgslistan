@@ -13,12 +13,15 @@
       --card:#ffffff; --card-border:#efc9cc; --table-head:#c90f13;
       --card-text:#1f1f1f; --card-text-soft:#4a4a4a;
     }
-    body{margin:0;background:
-      radial-gradient(1200px 800px at 15% -10%, rgba(227,6,19,.08), transparent 60%),
-      radial-gradient(1100px 900px at 110% 110%, rgba(185,0,12,.08), transparent 62%),
-      radial-gradient(900px 700px at 50% 120%, rgba(214,20,28,.06), transparent 65%),
-      linear-gradient(180deg, var(--bg), var(--bg2));
-      color:var(--text); font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial;
+    body{
+      margin:0;
+      background:
+        radial-gradient(1200px 800px at 15% -10%, rgba(227,6,19,.08), transparent 60%),
+        radial-gradient(1100px 900px at 110% 110%, rgba(185,0,12,.08), transparent 62%),
+        radial-gradient(900px 700px at 50% 120%, rgba(214,20,28,.06), transparent 65%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      color:var(--text);
+      font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial;
       min-height:100vh;
     }
     .wrap{max-width:1100px;margin:0 auto;padding:24px;position:relative}
@@ -72,7 +75,7 @@
     .row-actions{display:flex;gap:6px;flex-wrap:wrap}
     .row-actions button{padding:8px 10px;min-height:40px}
 
-    /* ======= NYTT: MER UTRYMME för Kategori/Typ/Betalsätt ======= */
+    /* ======= Mer utrymme för Kategori/Typ/Betalsätt ======= */
     th.category-col, td.category-col { min-width: 300px; }
     th.type-col,     td.type-col     { min-width: 180px; }
     th.pay-col,      td.pay-col      { min-width: 190px; }
@@ -88,8 +91,13 @@
     .type-col select option,
     .pay-col select option{ font-size:18px; }
 
-    /* Summeringar */
-    .sum-box{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:8px; }
+    /* ===== Summeringar ===== */
+    .sum-box{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:8px;
+      margin-top:8px;
+    }
     .card.salary{background:#fceef0;border-color:#f3c2c6}
     .card.income{background:#e9f8ee;border-color:#c2e9c9}
     .card.expense{background:#ffe8ea;border-color:#f3b4b8}
@@ -106,12 +114,13 @@
     }
     .cart-fab .count{min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:11px;padding:0 6px;font-weight:900;font-size:13px;background:var(--accent);color:#fff}
 
-    /* Mobil */
+    /* ===== Mobil ===== */
     @media (max-width:600px){
       .wrap{ padding:14px }
       .salary-box{ flex-direction:column; align-items:stretch }
       .salary-box input{ width:90% }
-      .sum-box{ grid-template-columns:repeat(2,minmax(0,1fr)) }
+      /* 👉 Helbredd på alla summeringskort (en kolumn) */
+      .sum-box{ grid-template-columns:1fr; }
       table{ min-width:1100px }
       .cart-fab{ top:66px; right:12px }
 
@@ -126,7 +135,7 @@
       .sum-box{ grid-template-columns:1fr; }
     }
 
-    /* Modal (kvitto) */
+    /* ===== Modal (kvitto) ===== */
     .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; z-index:99998;}
     .modal{position:fixed; inset:0; display:none; place-items:center; z-index:99999;}
     .modal.open,.modal-backdrop.open{display:grid}
@@ -155,7 +164,6 @@
     .checkcell input{ position:absolute; opacity:0; width:0; height:0; }
     .checkcell .box{ position:relative; width:28px; height:28px; border-radius:8px; border:2px solid #d7a7aa; background:#fff; box-shadow: inset 0 1px 0 rgba(0,0,0,.03); }
     .checkcell input:focus-visible + .box{ box-shadow:0 0 0 3px rgba(227,6,19,.35); }
-    .checkcell input:checked + .box{ background:linear-gradient(180deg,#e30613,#cc0d18); border-color:#a90b11; }
     .checkcell input:checked + .box::after{ content:""; position:absolute; left:8px; top:4px; width:8px; height:16px; border:3px solid #fff; border-top:0; border-left:0; transform:rotate(45deg); }
     th:first-child, td:first-child{ width:56px; }
   </style>
@@ -290,15 +298,21 @@
   const shareBtn = document.getElementById('shareBtn');
   const copyBtn = document.getElementById('copyBtn');
   const resetBtn = document.getElementById('resetBtn');
-  const resetMemBtn = document.getElementById('resetMemBtn'); // NY
+  const resetMemBtn = document.getElementById('resetMemBtn');
   const clearChecksBtn = document.getElementById('clearChecksBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const chipsWrap = document.getElementById('chips');
   const addChipBtn = document.getElementById('addChipBtn');
 
-  const totalIncomeEl=document.getElementById('totalIncome'), totalExpenseEl=document.getElementById('totalExpense'), balanceEl=document.getElementById('balance');
-  const salaryInput=document.getElementById('salaryInput'), salaryLeftEl=document.getElementById('salaryLeft'), salaryDisplayEl=document.getElementById('salaryDisplay'), bufferEl=document.getElementById('buffer');
-  const cartCountEl=document.getElementById('cartCount'), cartFab=document.getElementById('cartFab');
+  const totalIncomeEl=document.getElementById('totalIncome'),
+        totalExpenseEl=document.getElementById('totalExpense'),
+        balanceEl=document.getElementById('balance');
+  const salaryInput=document.getElementById('salaryInput'),
+        salaryLeftEl=document.getElementById('salaryLeft'),
+        salaryDisplayEl=document.getElementById('salaryDisplay'),
+        bufferEl=document.getElementById('buffer');
+  const cartCountEl=document.getElementById('cartCount'),
+        cartFab=document.getElementById('cartFab');
   const catMemList = document.getElementById('catMemList');
 
   const fmtSEK0 = n => new Intl.NumberFormat('sv-SE', { style:'currency', currency:'SEK', maximumFractionDigits:0 }).format(Math.round(n||0));
@@ -321,12 +335,8 @@
     if(!v) return;
     const list=loadCatMem();
     const exists=list.findIndex(x=>String(x).toLowerCase()===v.toLowerCase());
-    if(exists>-1){ // flytta upp
-      list.splice(exists,1);
-      list.unshift(v);
-    } else {
-      list.unshift(v);
-    }
+    if(exists>-1){ list.splice(exists,1); list.unshift(v); }
+    else { list.unshift(v); }
     saveCatMem(list);
   }
   function renderCatMemList(){
@@ -336,20 +346,51 @@
 
   /* ====== Moln Save/Load ====== */
   function payload(){ return { rows, salary:Number(salary)||0, updatedAt:Date.now() }; }
-  async function cloudSave(){ if(!cloudEnabled()||isLoadingFromCloud) return; try{ const form=new URLSearchParams(); form.set('op','save'); form.set('key',cloudKey()); form.set('secret',CLOUD.secret||''); form.set('data',JSON.stringify(payload())); const res=await fetch(CLOUD.endpoint,{method:'POST',body:form}); await res.text(); }catch(e){ console.warn('Molnsave fel',e); } }
+  async function cloudSave(){
+    if(!cloudEnabled()||isLoadingFromCloud) return;
+    try{
+      const form=new URLSearchParams();
+      form.set('op','save'); form.set('key',cloudKey());
+      form.set('secret',CLOUD.secret||'');
+      form.set('data',JSON.stringify(payload()));
+      const res=await fetch(CLOUD.endpoint,{method:'POST',body:form});
+      await res.text();
+    }catch(e){ console.warn('Molnsave fel',e); }
+  }
   async function cloudLoad(){
     if(!cloudEnabled()) return; isLoadingFromCloud=true;
     try{
-      const form=new URLSearchParams(); form.set('op','load'); form.set('key',cloudKey()); form.set('secret',CLOUD.secret||'');
-      const res=await fetch(CLOUD.endpoint,{method:'POST',body:form}); const text=await res.text(); let json; try{ json=JSON.parse(text); }catch(_){}
+      const form=new URLSearchParams();
+      form.set('op','load'); form.set('key',cloudKey());
+      form.set('secret',CLOUD.secret||'');
+      const res=await fetch(CLOUD.endpoint,{method:'POST',body:form});
+      const text=await res.text();
+      let json; try{ json=JSON.parse(text); }catch(_){}
       const data=json&&(json.data||json);
       if(data && Array.isArray(data.rows)){
-        rows=data.rows.map(r=>({category:r.category||'', qty:Number(r.qty??1)||1, unit:r.unit||'st', unitPrice:Number(r.unitPrice??0)||0, unitPriceOrd:Number(r.unitPriceOrd??0)||0, amount:Number(r.amount)||0, type:r.type==='Varukampanj'?'Varukampanj':'Butiksvara', pay:(typeof r.pay==='string')?r.pay:'', note:r.note||'', done:!!r.done}));
+        rows=data.rows.map(r=>({
+          category:r.category||'',
+          qty:Number(r.qty??1)||1,
+          unit:r.unit||'st',
+          unitPrice:Number(r.unitPrice??0)||0,
+          unitPriceOrd:Number(r.unitPriceOrd??0)||0,
+          amount:Number(r.amount)||0,
+          type:r.type==='Varukampanj'?'Varukampanj':'Butiksvara',
+          pay:(typeof r.pay==='string')?r.pay:'',
+          note:r.note||'',
+          done:!!r.done
+        }));
         rows.forEach((_,i)=>recalcRow(i,true));
       }
-      if(typeof data?.salary!=='undefined'){ salary=Number(data.salary)||0; salaryInput.value=salary||''; }
-    }catch(e){ console.warn('Molnload fel',e);
-    }finally{ render(); updateTotals(); setTimeout(()=>{isLoadingFromCloud=false;},0); }
+      if(typeof data?.salary!=='undefined'){
+        salary=Number(data.salary)||0;
+        salaryInput.value=salary||'';
+      }
+    }catch(e){
+      console.warn('Molnload fel',e);
+    }finally{
+      render(); updateTotals(); setTimeout(()=>{isLoadingFromCloud=false;},0);
+    }
   }
 
   /* ====== Snabbknappar ====== */
@@ -360,13 +401,19 @@
       const el=document.createElement('div'); el.className='chip';
       el.innerHTML=`<span>${escapeHtml(c.label)}</span><span class="x" title="Ta bort" data-i="${idx}">×</span>`;
       el.addEventListener('click',(ev)=>{ if(ev.target.classList.contains('x')) return; addRowFromChip(c); });
-      el.querySelector('.x').addEventListener('click',(ev)=>{ ev.stopPropagation(); const arr=JSON.parse(localStorage.getItem('cart_quick_items')||'[]'); arr.splice(idx,1); localStorage.setItem('cart_quick_items',JSON.stringify(arr)); loadChips(); });
+      el.querySelector('.x').addEventListener('click',(ev)=>{
+        ev.stopPropagation();
+        const arr=JSON.parse(localStorage.getItem('cart_quick_items')||'[]');
+        arr.splice(idx,1);
+        localStorage.setItem('cart_quick_items',JSON.stringify(arr));
+        loadChips();
+      });
       chipsWrap.insertBefore(el, addChipBtn);
     });
   }
   function addRowFromChip(c){
     rows.push({ category:c.label||'', qty:1, unit:'st', unitPrice:Number(c.price||0), unitPriceOrd:0, amount:Number(c.price||0), type:'Butiksvara', pay:'', note:'', done:false });
-    rememberCategory(c.label||''); // NY: minnesinlärning även via snabbknapp
+    rememberCategory(c.label||'');
     const i=rows.length-1; recalcRow(i,true); render(); updateTotals();
   }
   addChipBtn.addEventListener('click',()=>{
@@ -381,7 +428,7 @@
 
   /* ====== INIT ====== */
   function init(){
-    renderCatMemList(); // NY
+    renderCatMemList();
 
     const rawSalary=localStorage.getItem('cart_salary')||'0';
     salary=Number(rawSalary)||0;
@@ -394,7 +441,18 @@
 
     try{
       const stored=JSON.parse(localStorage.getItem('cart_rows')||'[]');
-      if(Array.isArray(stored)) rows=stored.map(r=>({category:r.category||'', qty:Number(r.qty??1)||1, unit:r.unit||'st', unitPrice:Number(r.unitPrice??0)||0, unitPriceOrd:Number(r.unitPriceOrd??0)||0, amount:Number(r.amount)||0, type:r.type==='Varukampanj'?'Varukampanj':'Butiksvara', pay:(typeof r.pay==='string')?r.pay:'', note:r.note||'', done:!!r.done}));
+      if(Array.isArray(stored)) rows=stored.map(r=>({
+        category:r.category||'',
+        qty:Number(r.qty??1)||1,
+        unit:r.unit||'st',
+        unitPrice:Number(r.unitPrice??0)||0,
+        unitPriceOrd:Number(r.unitPriceOrd??0)||0,
+        amount:Number(r.amount)||0,
+        type:r.type==='Varukampanj'?'Varukampanj':'Butiksvara',
+        pay:(typeof r.pay==='string')?r.pay:'',
+        note:r.note||'',
+        done:!!r.done
+      }));
     }catch(_){}
 
     ensureKey();
@@ -412,7 +470,6 @@
     ['click','keydown','pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev, secureGate.bump));
     document.addEventListener('visibilitychange', secureGate.bump);
 
-    // NY: rensa bara kategori-minnet
     resetMemBtn.addEventListener('click', ()=>{
       if(!confirm('Rensa sparade kategorier (minnet)? Detta påverkar inte varor eller budget.')) return;
       localStorage.removeItem(CATMEM_KEY);
@@ -520,7 +577,6 @@
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
 
-      // NY: lär in kategori när man lämnar fältet (eller väljer förslag)
       if(el.dataset.col === 'category'){
         el.addEventListener('blur', ()=>{ rememberCategory(el.value); });
       }
@@ -534,7 +590,6 @@
       }
     });
 
-    // Radknappar
     tbody.querySelectorAll('button[data-action]').forEach(btn=>{
       btn.onclick=()=>{
         const i=+btn.dataset.i, act=btn.dataset.action;
@@ -641,7 +696,7 @@
     if(!confirm('Nollställa rader + matbudget + snabbknappar?')) return;
     rows = []; salary = 0; salaryInput.value = '';
     localStorage.removeItem('cart_rows'); localStorage.removeItem('cart_salary');
-    localStorage.removeItem('cart_quick_items'); // OBS: minnet rörs inte
+    localStorage.removeItem('cart_quick_items');
     loadChips();
     render(); updateTotals();
   };
