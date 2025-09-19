@@ -72,7 +72,7 @@
     .row-actions{display:flex;gap:6px;flex-wrap:wrap}
     .row-actions button{padding:8px 10px;min-height:40px}
 
-    /* ======= NYTT: MER UTRYMME för Kategori/Typ/Betalsätt ======= */
+    /* ======= MER UTRYMME för Kategori/Typ/Betalsätt (desktop) ======= */
     th.category-col, td.category-col { min-width: 300px; }
     th.type-col,     td.type-col     { min-width: 180px; }
     th.pay-col,      td.pay-col      { min-width: 190px; }
@@ -106,7 +106,7 @@
     }
     .cart-fab .count{min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:11px;padding:0 6px;font-weight:900;font-size:13px;background:var(--accent);color:#fff}
 
-    /* Mobil */
+    /* Mobil (befintlig) */
     @media (max-width:600px){
       .wrap{ padding:14px }
       .salary-box{ flex-direction:column; align-items:stretch }
@@ -126,19 +126,60 @@
       .sum-box{ grid-template-columns:1fr; }
     }
 
-    /* Modal (kvitto) */
-    .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; z-index:99998;}
-    .modal{position:fixed; inset:0; display:none; place-items:center; z-index:99999;}
-    .modal.open,.modal-backdrop.open{display:grid}
-    .modal-card{width:min(92vw,720px); background:#fff; color:#1f1f1f; border-radius:16px; border:1px solid var(--card-border); box-shadow:0 20px 80px rgba(0,0,0,.35); overflow:hidden;}
-    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.08)}
-    .modal-body{padding:12px 14px; display:grid; gap:10px}
-    .modal-actions{display:flex; gap:8px; justify-content:flex-end; padding:12px 14px; border-top:1px solid rgba(0,0,0,.08)}
-    .modal input[type="email"]{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--card-border); background:#fff; color:#1f1f1f; font-size:16px; min-height:44px}
-    .receipt{font:14px/1.4 ui-sans-serif; background:#fff; color:#222; border:1px dashed #e5a3a8; border-radius:12px; padding:12px; max-height:46vh; overflow:auto;}
-    .pill{display:inline-block; padding:2px 8px; border-radius:999px; font-weight:700; font-size:12px; background:#f6f6f6}
+    /* ===== Mobil STAPLAD vy (som i budgetmallen) ===== */
+    @media (max-width: 640px){
+      .table-wrap{ padding:0; border:0; background:transparent; }
+      table{ min-width:0; border-collapse:separate; border-spacing:0 10px; }
+      thead{ display:none; }
+      tbody, tr, td{ display:block; width:100%; }
+      tr{
+        background:#fff;
+        border:1px solid var(--card-border);
+        border-radius:14px;
+        box-shadow:0 6px 20px rgba(0,0,0,.06);
+        padding:8px 10px;
+      }
+      td{
+        border:0;
+        padding:8px 10px 6px;
+        position:relative;
+      }
+      td::before{
+        content: attr(data-label);
+        display:block;
+        font-size:12px;
+        font-weight:800;
+        color:var(--text-soft);
+        margin-bottom:4px;
+        letter-spacing:.2px;
+      }
+      /* ingen fast bredd på första cellen i mobil */
+      th:first-child, td:first-child{ width:auto; }
+      /* checkrutan på egen rad, centreras fint */
+      td[data-label="Klar"]{ display:flex; align-items:center; }
+      .checkcell{ width:auto; }
 
-    /* ===== Glasig vaktskärm ===== */
+      /* inputs/val i staplad vy */
+      td input[type="text"],
+      td input[type="number"],
+      td select{
+        min-height:52px;
+        font-size:16px;
+      }
+
+      /* högerjustering behövs inte i mobil */
+      .right{ text-align:left; }
+
+      /* actions längst ned som knapprad */
+      .row-actions{
+        display:flex;
+        flex-wrap:wrap;
+        gap:8px;
+        padding-top:6px;
+      }
+    }
+
+    /* Glasig vaktskärm */
     .gate{position:fixed; inset:0; display:grid; place-items:center; z-index:100000; backdrop-filter: blur(14px); background:rgba(23,19,20,.28);}
     .gate .panel{ width:clamp(300px, 92vw, 420px); border-radius:20px; padding:18px 16px 14px; background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.72)); border:1px solid rgba(255,255,255,.55); box-shadow:0 20px 80px rgba(0,0,0,.40); }
     .gate h1{margin:6px 0 12px; font-size:20px; text-align:center;}
@@ -177,7 +218,6 @@
       <button id="clearChecksBtn">Rensa check</button>
       <button id="logoutBtn">Logga ut</button>
       <button id="resetBtn" class="danger" title="Nollställ allt till 0">Nollställ</button>
-      <!-- NY: nollställ endast kategori-minnet -->
       <button id="resetMemBtn" title="Rensa lagrade kategorier">Nollställ minne</button>
     </div>
 
@@ -321,12 +361,8 @@
     if(!v) return;
     const list=loadCatMem();
     const exists=list.findIndex(x=>String(x).toLowerCase()===v.toLowerCase());
-    if(exists>-1){ // flytta upp
-      list.splice(exists,1);
-      list.unshift(v);
-    } else {
-      list.unshift(v);
-    }
+    if(exists>-1){ list.splice(exists,1); list.unshift(v); }
+    else { list.unshift(v); }
     saveCatMem(list);
   }
   function renderCatMemList(){
@@ -366,7 +402,7 @@
   }
   function addRowFromChip(c){
     rows.push({ category:c.label||'', qty:1, unit:'st', unitPrice:Number(c.price||0), unitPriceOrd:0, amount:Number(c.price||0), type:'Butiksvara', pay:'', note:'', done:false });
-    rememberCategory(c.label||''); // NY: minnesinlärning även via snabbknapp
+    rememberCategory(c.label||'');
     const i=rows.length-1; recalcRow(i,true); render(); updateTotals();
   }
   addChipBtn.addEventListener('click',()=>{
@@ -381,7 +417,7 @@
 
   /* ====== INIT ====== */
   function init(){
-    renderCatMemList(); // NY
+    renderCatMemList();
 
     const rawSalary=localStorage.getItem('cart_salary')||'0';
     salary=Number(rawSalary)||0;
@@ -412,7 +448,6 @@
     ['click','keydown','pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev, secureGate.bump));
     document.addEventListener('visibilitychange', secureGate.bump);
 
-    // NY: rensa bara kategori-minnet
     resetMemBtn.addEventListener('click', ()=>{
       if(!confirm('Rensa sparade kategorier (minnet)? Detta påverkar inte varor eller budget.')) return;
       localStorage.removeItem(CATMEM_KEY);
@@ -433,7 +468,7 @@
     }, 0);
   }
 
-  /* ====== Render & events ====== */
+  /* ====== Render & events (med data-labels för mobil) ====== */
   function render(){
     tbody.innerHTML='';
     if(rows.length===0){
@@ -449,32 +484,32 @@
       if(r.done) tr.classList.add('done');
 
       tr.innerHTML = `
-        <td>
+        <td data-label="Klar">
           <label class="checkcell" title="Markera klar">
             <input type="checkbox" data-i="${i}" data-col="done" ${r.done?'checked':''} aria-label="Markera klar">
             <span class="box" aria-hidden="true"></span>
           </label>
         </td>
-        <td class="category-col">
+        <td class="category-col" data-label="Vara">
           <input type="text" data-i="${i}" data-col="category" value="${escapeHtml(r.category)}" placeholder="T.ex. Ägg" list="catMemList">
         </td>
-        <td><input type="number" data-i="${i}" data-col="qty" value="${r.qty}" min="0" step="1" inputmode="numeric"></td>
-        <td>
+        <td data-label="Antal"><input type="number" data-i="${i}" data-col="qty" value="${r.qty}" min="0" step="1" inputmode="numeric"></td>
+        <td data-label="Enhet">
           <select data-i="${i}" data-col="unit">
             <option value="st" ${r.unit==='st'?'selected':''}>st</option>
             <option value="kg" ${r.unit==='kg'?'selected':''}>kg</option>
           </select>
         </td>
-        <td><input type="number" data-i="${i}" data-col="unitPrice" value="${r.unitPrice}" step="0.01" inputmode="decimal" placeholder="0.00"></td>
-        <td><input type="number" data-i="${i}" data-col="unitPriceOrd" value="${r.unitPriceOrd||0}" step="0.01" inputmode="decimal" placeholder="0.00"></td>
-        <td class="right"><input type="number" data-i="${i}" data-col="amount" value="${Math.round(r.amount)}" readonly></td>
-        <td class="type-col">
+        <td data-label="à-pris (nu)"><input type="number" data-i="${i}" data-col="unitPrice" value="${r.unitPrice}" step="0.01" inputmode="decimal" placeholder="0.00"></td>
+        <td data-label="Ord. à-pris"><input type="number" data-i="${i}" data-col="unitPriceOrd" value="${r.unitPriceOrd||0}" step="0.01" inputmode="decimal" placeholder="0.00"></td>
+        <td class="right" data-label="Radpris"><input type="number" data-i="${i}" data-col="amount" value="${Math.round(r.amount)}" readonly></td>
+        <td class="type-col" data-label="Typ">
           <select data-i="${i}" data-col="type">
             <option ${r.type==='Butiksvara'?'selected':''}>Butiksvara</option>
             <option ${r.type==='Varukampanj'?'selected':''}>Varukampanj</option>
           </select>
         </td>
-        <td class="pay-col">
+        <td class="pay-col" data-label="Betalsätt">
           <select data-i="${i}" data-col="pay">
             <option value="" ${(!r.pay||r.pay==='')?'selected':''}>-</option>
             <option value="Kort" ${r.pay==='Kort'?'selected':''}>Kort</option>
@@ -486,8 +521,8 @@
             <option value="Faktura" ${r.pay==='Faktura'?'selected':''}>Faktura</option>
           </select>
         </td>
-        <td class="notes-col"><input type="text" data-i="${i}" data-col="note" value="${escapeHtml(r.note||'')}" placeholder="Anteckningar (valfritt)"></td>
-        <td class="row-actions">
+        <td class="notes-col" data-label="Anteckningar"><input type="text" data-i="${i}" data-col="note" value="${escapeHtml(r.note||'')}" placeholder="Anteckningar (valfritt)"></td>
+        <td class="row-actions" data-label="Åtgärd">
           <button data-action="rabatt" data-i="${i}" title="Lägg/ändra rabatt">Rabatt</button>
           <button data-action="up" data-i="${i}" title="Flytta upp">↑</button>
           <button data-action="down" data-i="${i}" title="Flytta ner">↓</button>
@@ -520,11 +555,9 @@
       el.addEventListener('input', handler);
       el.addEventListener('change', handler);
 
-      // NY: lär in kategori när man lämnar fältet (eller väljer förslag)
       if(el.dataset.col === 'category'){
         el.addEventListener('blur', ()=>{ rememberCategory(el.value); });
       }
-
       if(el.dataset.col==='unitPrice'||el.dataset.col==='unitPriceOrd'){
         el.onfocus = ()=>{ if(el.value==='0' || el.value==='') el.value=''; };
         el.onblur  = ()=>{ if(el.value==='' || isNaN(Number(el.value))){ el.value='0'; handler(); } };
@@ -534,7 +567,6 @@
       }
     });
 
-    // Radknappar
     tbody.querySelectorAll('button[data-action]').forEach(btn=>{
       btn.onclick=()=>{
         const i=+btn.dataset.i, act=btn.dataset.action;
@@ -641,7 +673,7 @@
     if(!confirm('Nollställa rader + matbudget + snabbknappar?')) return;
     rows = []; salary = 0; salaryInput.value = '';
     localStorage.removeItem('cart_rows'); localStorage.removeItem('cart_salary');
-    localStorage.removeItem('cart_quick_items'); // OBS: minnet rörs inte
+    localStorage.removeItem('cart_quick_items');
     loadChips();
     render(); updateTotals();
   };
